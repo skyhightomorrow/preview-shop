@@ -37,6 +37,8 @@ export default function Home() {
 
   const [manualImgUrl, setManualImgUrl] = useState("");
 
+  const [lightbox, setLightbox] = useState<string | null>(null);
+
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [showHistory, setShowHistory] = useState(false);
   const [toast, setToast] = useState("");
@@ -299,6 +301,28 @@ export default function Home() {
 
   return (
     <div className="min-h-screen">
+      {/* 라이트박스 */}
+      {lightbox && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 cursor-zoom-out"
+          onClick={() => setLightbox(null)}
+          onKeyDown={(e) => e.key === "Escape" && setLightbox(null)}
+          tabIndex={0}
+        >
+          <button
+            className="absolute top-4 right-4 text-white/70 hover:text-white text-4xl leading-none"
+            onClick={() => setLightbox(null)}
+          >×</button>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={lightbox}
+            alt="크게 보기"
+            className="max-h-[95vh] max-w-[95vw] rounded-2xl object-contain shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
+
       {/* 토스트 */}
       {toast && (
         <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full bg-stone-800 px-5 py-2.5 text-sm text-white shadow-lg">
@@ -512,9 +536,17 @@ export default function Home() {
           {phase === "result" && resultUrl && (
             <div className="mt-8">
               <h3 className="text-lg font-bold text-stone-800">✨ 입어본 모습</h3>
-              <div className="mt-3 overflow-hidden rounded-2xl border border-stone-200">
+              <div
+                className="mt-3 overflow-hidden rounded-2xl border border-stone-200 cursor-zoom-in relative group"
+                onClick={() => setLightbox(resultUrl)}
+              >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={resultUrl} alt="가상 피팅 결과" className="w-full" />
+                <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 transition-colors">
+                  <span className="opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 text-white text-sm font-medium px-3 py-1.5 rounded-full">
+                    크게 보기
+                  </span>
+                </div>
               </div>
               <ActionButtons fileUrl={resultUrl} type="image" />
 
