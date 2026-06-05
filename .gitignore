@@ -11,3 +11,5 @@ next-env.d.ts
 # 테스트용 이미지/영상 (배포 불필요)
 /test
 /public/compare
+
+.vercel
