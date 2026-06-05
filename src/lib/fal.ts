@@ -52,7 +52,8 @@ export async function generateTryOn(
   return firstImageUrl(result);
 }
 
-const VIDEO_PROMPTS = [
+// 여성용: ①②③ 전체
+const VIDEO_PROMPTS_FEMALE = [
   // ① 런웨이 워킹
   "The fashion model walks confidently toward the camera with a smooth catwalk stride. " +
   "Arms swing naturally, outfit and hair move with the motion. " +
@@ -71,9 +72,54 @@ const VIDEO_PROMPTS = [
   "White studio background, soft even lighting, stable camera.",
 ];
 
+// 남성용: ②③ (런웨이 워킹은 여성 느낌이 강함)
+const VIDEO_PROMPTS_MALE = [
+  // ② 포즈 시퀀스
+  "The male fashion model transitions through confident poses: " +
+  "first standing with arms relaxed looking at camera, " +
+  "then turning slightly to show the outfit profile, " +
+  "finally looking over shoulder with a cool expression. " +
+  "Smooth natural transitions, white studio background, stable camera.",
+
+  // ③ 턴 + 포즈
+  "The male fashion model does a slow half-turn to show the back of the outfit, " +
+  "then turns back to face the camera and stands confidently with arms at sides. " +
+  "White studio background, soft even lighting, stable camera.",
+];
+
+function pickRandom<T>(arr: T[]): T {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+/** 착용 결과 이미지에서 성별을 빠르게 감지해 적절한 포즈 프롬프트 풀을 반환. */
+async function detectGenderPrompt(imageUrl: string): Promise<string> {
+  try {
+    const { default: Anthropic } = await import("@anthropic-ai/sdk");
+    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    const msg = await client.messages.create({
+      model: "claude-haiku-4-5",
+      max_tokens: 10,
+      messages: [{
+        role: "user",
+        content: [
+          { type: "image", source: { type: "url", url: imageUrl } },
+          { type: "text", text: 'Is the main person in this image male or female? Reply with exactly one word: "male" or "female".' },
+        ],
+      }],
+    });
+    const answer = (msg.content[0] as { type: string; text: string }).text.toLowerCase().trim();
+    return answer.includes("male") && !answer.includes("female")
+      ? pickRandom(VIDEO_PROMPTS_MALE)
+      : pickRandom(VIDEO_PROMPTS_FEMALE);
+  } catch {
+    // 감지 실패 시 여성 풀로 폴백
+    return pickRandom(VIDEO_PROMPTS_FEMALE);
+  }
+}
+
 /** 영상 생성 작업을 Wan 2.5 큐에 제출하고 request_id를 반환. */
 export async function startTryOnVideo(imageUrl: string): Promise<string> {
-  const prompt = VIDEO_PROMPTS[Math.floor(Math.random() * VIDEO_PROMPTS.length)];
+  const prompt = await detectGenderPrompt(imageUrl);
   const { request_id } = await fal.queue.submit(MODEL_VIDEO, {
     input: {
       prompt,
