@@ -1,0 +1,13 @@
+/node_modules
+/.next
+/out
+/build
+.env*.local
+.vercel
+*.tsbuildinfo
+next-env.d.ts
+.DS_Store
+
+# 테스트용 이미지/영상 (배포 불필요)
+/test
+/public/compare
