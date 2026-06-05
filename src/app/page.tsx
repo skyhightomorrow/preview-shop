@@ -360,18 +360,6 @@ export default function Home() {
         <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-white/10 blur-3xl animate-float-slow" />
         <div className="absolute -bottom-24 -left-24 h-72 w-72 rounded-full bg-white/10 blur-3xl animate-float-slow" />
 
-        {/* 기록 버튼 */}
-        {history.length > 0 && (
-          <button
-            onClick={() => setShowHistory(true)}
-            className="absolute top-5 right-5 flex items-center gap-1.5 rounded-full bg-white/20 px-4 py-2 text-sm font-medium backdrop-blur transition hover:bg-white/30"
-          >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            내 기록 {history.length}
-          </button>
-        )}
 
         <div className="mx-auto max-w-5xl px-6 py-20 text-center relative">
           <span className="inline-block rounded-full bg-white/15 px-4 py-1 text-sm font-medium backdrop-blur">
@@ -440,6 +428,20 @@ export default function Home() {
                   )}
                 </div>
 
+                {/* 어떤 옷? (링크 모드일 때만) */}
+                {!garmentFile && (
+                  <div>
+                    <label className="text-xs font-medium text-stone-500">
+                      어떤 옷? <span className="font-normal text-stone-400">(여러 옷이 있을 때 / 선택)</span>
+                    </label>
+                    <input
+                      type="text" value={prompt} onChange={(e) => setPrompt(e.target.value)}
+                      placeholder='예: "파란색 치마", "체크 셔츠"'
+                      className="mt-1 w-full rounded-xl border border-stone-300 px-4 py-2.5 text-sm outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-200"
+                    />
+                  </div>
+                )}
+
                 {/* 구분선 */}
                 <div className="flex items-center gap-3">
                   <div className="h-px flex-1 bg-stone-200" />
@@ -484,20 +486,6 @@ export default function Home() {
                       onChange={(e) => { const f = e.target.files?.[0]; if (f) { pickGarmentFile(f); setUrl(""); } }} />
                   </label>
                 </div>
-
-                {/* 어떤 옷? (링크 모드일 때만) */}
-                {!garmentFile && (
-                  <div>
-                    <label className="text-xs font-medium text-stone-500">
-                      어떤 옷? <span className="font-normal text-stone-400">(여러 옷이 있을 때 / 선택)</span>
-                    </label>
-                    <input
-                      type="text" value={prompt} onChange={(e) => setPrompt(e.target.value)}
-                      placeholder='예: "파란색 치마", "체크 셔츠"'
-                      className="mt-1 w-full rounded-xl border border-stone-300 px-4 py-2.5 text-sm outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-200"
-                    />
-                  </div>
-                )}
               </div>
             </div>
 
@@ -547,6 +535,20 @@ export default function Home() {
                 >
                   {busy ? "처리 중…" : "입어보기 생성 ✨"}
                 </button>
+
+                {/* 내 기록 */}
+                {history.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowHistory(true)}
+                    className="mt-3 w-full flex items-center justify-center gap-2 rounded-xl border-2 border-stone-200 py-3.5 font-bold text-stone-600 transition hover:border-violet-400 hover:bg-violet-50 hover:text-violet-700"
+                  >
+                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    내 생성 기록 보기 ({history.length}개)
+                  </button>
+                )}
               </div>
             </div>
 
