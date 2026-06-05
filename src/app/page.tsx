@@ -149,6 +149,24 @@ export default function Home() {
     currentIdRef.current = null;
   }
 
+  async function generateWithFile(file: File) {
+    setPhase("generating");
+    setMessage("의상 이미지 업로드 중…");
+    setError("");
+    try {
+      const uploaded = await fetch("/api/upload-garment", {
+        method: "POST",
+        body: (() => { const fd = new FormData(); fd.append("file", file); return fd; })(),
+      });
+      const { url } = await uploaded.json();
+      if (!uploaded.ok || !url) throw new Error("이미지 업로드 실패");
+      await generateWith(url);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "업로드 오류");
+      setPhase("error");
+    }
+  }
+
   async function generateWith(garmentUrl: string) {
     setPhase("generating");
     setMessage("내가 그 옷을 입은 모습을 그리는 중…");
@@ -441,13 +459,33 @@ export default function Home() {
                 </div>
               )}
 
-              {/* 직접 이미지 URL 입력 */}
+              {/* 직접 입력 / 파일 업로드 */}
               <div className={`${shortlist.length > 0 ? "mt-5 border-t border-stone-100 pt-5" : "mt-4"}`}>
-                <p className="text-sm font-medium text-stone-600 mb-2">
-                  {shortlist.length > 0 ? "원하는 옷이 없다면 — 이미지 URL 직접 입력" : "의상 이미지 URL을 직접 붙여넣어 주세요"}
+                <p className="text-sm font-medium text-stone-600 mb-3">
+                  {shortlist.length > 0 ? "원하는 옷이 없다면 — 의상 이미지 직접 추가" : "의상 이미지를 직접 추가해주세요"}
                 </p>
-                <p className="text-xs text-stone-400 mb-3">
-                  상품 이미지 위에서 <b>오른쪽 클릭 → 이미지 주소 복사</b> 후 붙여넣기
+
+                {/* 옵션 A: 스크린샷 업로드 */}
+                <label className="flex cursor-pointer items-center gap-3 rounded-xl border-2 border-dashed border-violet-200 bg-violet-50 px-4 py-3.5 transition hover:border-violet-400 hover:bg-violet-100 mb-3">
+                  <span className="text-2xl">📸</span>
+                  <div>
+                    <p className="text-sm font-semibold text-violet-700">스크린샷 또는 이미지 파일 업로드</p>
+                    <p className="text-xs text-violet-500 mt-0.5">모바일에서 상품 화면 캡처 후 바로 올리기</p>
+                  </div>
+                  <input
+                    type="file" accept="image/*" className="hidden"
+                    onChange={(e) => { const f = e.target.files?.[0]; if (f) generateWithFile(f); }}
+                  />
+                </label>
+
+                {/* 옵션 B: URL 붙여넣기 */}
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="h-px flex-1 bg-stone-200" />
+                  <span className="text-xs text-stone-400">또는 URL로</span>
+                  <div className="h-px flex-1 bg-stone-200" />
+                </div>
+                <p className="text-xs text-stone-400 mb-2">
+                  PC에서: 상품 이미지 위 <b>오른쪽 클릭 → 이미지 주소 복사</b>
                 </p>
                 <div className="flex gap-2">
                   <input
