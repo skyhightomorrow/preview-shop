@@ -413,58 +413,64 @@ export default function Home() {
       {/* ===== 툴 ===== */}
       <section ref={toolRef} className="mx-auto max-w-3xl px-6 pb-24">
         <div className="rounded-3xl border border-stone-200 bg-white p-6 shadow-xl sm:p-8">
-          <form onSubmit={onSubmit} className="space-y-5">
-            {/* ── 의상 입력 (링크 OR 직접 업로드) ── */}
-            <div className="space-y-3">
-              <p className="text-sm font-semibold text-stone-700">의상 선택</p>
+          <form onSubmit={onSubmit} className="space-y-6">
 
-              {/* 상품 링크 */}
-              <div>
-                <label className="text-xs font-medium text-stone-500">상품 상세 페이지 링크</label>
-                <input
-                  type="url" value={url} onChange={(e) => { setUrl(e.target.value); if (e.target.value) { setGarmentFile(null); setGarmentPreview(null); } }}
-                  placeholder="https://… 쇼핑몰 옷 상세 페이지 주소"
-                  disabled={!!garmentFile}
-                  className="mt-1 w-full rounded-xl border border-stone-300 px-4 py-3 text-sm outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-200 disabled:bg-stone-50 disabled:text-stone-400"
-                />
-                {!garmentFile && (
-                  <ul className="mt-1.5 space-y-0.5 text-xs text-stone-400">
-                    <li>· 상품 <b>상세 페이지</b> 링크를 넣어주세요 (목록·검색 페이지 X)</li>
-                    <li>· 무신사·29CM·에이블리·지그재그 등 주요 쇼핑몰 지원</li>
-                    <li>· 로그인 필요 페이지·성인 인증 페이지는 가져올 수 없어요</li>
-                  </ul>
-                )}
-              </div>
+            {/* ── STEP 1 : 의상 선택 ── */}
+            <div className="flex gap-4">
+              <div className="flex-shrink-0 flex h-8 w-8 items-center justify-center rounded-full bg-violet-100 font-bold text-violet-700 text-sm mt-0.5">1</div>
+              <div className="flex-1 space-y-3">
+                <p className="font-bold text-stone-800">의상 선택</p>
 
-              {/* 구분선 */}
-              <div className="flex items-center gap-3">
-                <div className="h-px flex-1 bg-stone-200" />
-                <span className="text-xs text-stone-400">또는</span>
-                <div className="h-px flex-1 bg-stone-200" />
-              </div>
+                {/* 상품 링크 */}
+                <div>
+                  <label className="text-xs font-medium text-stone-500">상품 상세 페이지 링크</label>
+                  <input
+                    type="url" value={url}
+                    onChange={(e) => { setUrl(e.target.value); if (e.target.value) { setGarmentFile(null); setGarmentPreview(null); } }}
+                    placeholder="https://… 쇼핑몰 옷 상세 페이지 주소"
+                    disabled={!!garmentFile}
+                    className="mt-1 w-full rounded-xl border border-stone-300 px-4 py-3 text-sm outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-200 disabled:bg-stone-50 disabled:text-stone-400"
+                  />
+                  {!garmentFile && (
+                    <ul className="mt-1.5 space-y-0.5 text-xs text-stone-400">
+                      <li>· 상품 <b>상세 페이지</b> 링크를 넣어주세요 (목록·검색 페이지 X)</li>
+                      <li>· 무신사·29CM·에이블리·지그재그 등 주요 쇼핑몰 지원</li>
+                      <li>· 로그인 필요 페이지·성인 인증 페이지는 가져올 수 없어요</li>
+                    </ul>
+                  )}
+                </div>
 
-              {/* 의상 이미지 직접 업로드 */}
-              <div>
-                <label className="text-xs font-medium text-stone-500">
-                  의상 이미지 직접 올리기 <span className="text-violet-500 font-semibold">(스크린샷 가능)</span>
-                </label>
-                <label
-                  className={`mt-1 flex cursor-pointer items-center gap-3 rounded-xl border-2 border-dashed px-4 py-3 transition
-                    ${isDraggingGarment ? "border-violet-500 bg-violet-50" : garmentFile ? "border-violet-400 bg-violet-50" : "border-stone-300 hover:border-violet-400 hover:bg-stone-50"}`}
-                  onDragOver={onGarmentDragOver} onDragLeave={onGarmentDragLeave} onDrop={onGarmentDrop}
-                >
-                  {garmentPreview
-                    ? <>
+                {/* 구분선 */}
+                <div className="flex items-center gap-3">
+                  <div className="h-px flex-1 bg-stone-200" />
+                  <span className="text-xs text-stone-400">또는</span>
+                  <div className="h-px flex-1 bg-stone-200" />
+                </div>
+
+                {/* 의상 이미지 직접 업로드 */}
+                <div>
+                  <label className="text-xs font-medium text-stone-500">
+                    이미지 직접 올리기 <span className="text-violet-500 font-semibold">(스크린샷 가능)</span>
+                  </label>
+                  <label
+                    className={`mt-1 flex cursor-pointer items-center gap-3 rounded-xl border-2 border-dashed px-4 py-3 transition
+                      ${isDraggingGarment ? "border-violet-500 bg-violet-50" : garmentFile ? "border-violet-400 bg-violet-50" : "border-stone-300 hover:border-violet-400 hover:bg-stone-50"}`}
+                    onDragOver={onGarmentDragOver} onDragLeave={onGarmentDragLeave} onDrop={onGarmentDrop}
+                  >
+                    {garmentPreview ? (
+                      <>
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={garmentPreview} alt="의상 미리보기" className="h-14 w-14 rounded-lg object-cover flex-shrink-0" />
                         <div className="min-w-0">
                           <p className="text-sm font-medium text-violet-700 truncate">{garmentFile!.name}</p>
                           <p className="text-xs text-stone-400 mt-0.5">다른 이미지로 교체하려면 클릭</p>
                         </div>
-                        <button type="button" onClick={(e) => { e.preventDefault(); setGarmentFile(null); setGarmentPreview(null); }}
-                          className="ml-auto text-stone-400 hover:text-rose-500 text-lg leading-none flex-shrink-0">×</button>
+                        <button type="button"
+                          onClick={(e) => { e.preventDefault(); setGarmentFile(null); setGarmentPreview(null); }}
+                          className="ml-auto text-stone-400 hover:text-rose-500 text-xl leading-none flex-shrink-0">×</button>
                       </>
-                    : <>
+                    ) : (
+                      <>
                         <span className="text-2xl">📸</span>
                         <div>
                           <p className="text-sm font-medium text-stone-600">
@@ -473,61 +479,77 @@ export default function Home() {
                           <p className="text-xs text-stone-400 mt-0.5">모바일 스크린샷 · 상품 이미지 파일</p>
                         </div>
                       </>
-                  }
-                  <input type="file" accept="image/*" className="hidden"
-                    onChange={(e) => { const f = e.target.files?.[0]; if (f) { pickGarmentFile(f); setUrl(""); } }} />
-                </label>
-              </div>
-            </div>
+                    )}
+                    <input type="file" accept="image/*" className="hidden"
+                      onChange={(e) => { const f = e.target.files?.[0]; if (f) { pickGarmentFile(f); setUrl(""); } }} />
+                  </label>
+                </div>
 
-            {/* 어떤 옷? (링크 입력 시만 의미 있음) */}
-            {!garmentFile && (
-              <div>
-                <label className="text-sm font-semibold text-stone-700">
-                  어떤 옷? <span className="font-normal text-stone-400">(여러 옷이 있을 때 / 선택)</span>
-                </label>
-                <input
-                  type="text" value={prompt} onChange={(e) => setPrompt(e.target.value)}
-                  placeholder='예: "파란색 치마", "체크 셔츠"'
-                  className="mt-1.5 w-full rounded-xl border border-stone-300 px-4 py-3 outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-200"
-                />
-              </div>
-            )}
-
-            <div>
-              <label className="text-sm font-semibold text-stone-700">내 사진</label>
-              <div className="mt-1.5 flex items-center gap-4">
-                {/* 드래그앤드롭 영역 */}
-                <label
-                  className={`flex-1 cursor-pointer rounded-xl border-2 border-dashed px-4 py-6 text-center text-sm transition
-                    ${isDragging ? "border-violet-500 bg-violet-50 text-violet-600" : "border-stone-300 text-stone-500 hover:border-violet-400 hover:bg-violet-50"}`}
-                  onDragOver={onDragOver} onDragEnter={onDragEnter}
-                  onDragLeave={onDragLeave} onDrop={onDrop}
-                >
-                  {isDragging
-                    ? "여기에 놓아주세요"
-                    : photo ? `📷 ${photo.name}` : "클릭하거나 사진을 여기로 드래그"}
-                  <input type="file" accept="image/*" onChange={onPickPhoto} className="hidden" />
-                </label>
-                {photoPreview && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={photoPreview} alt="미리보기" className="h-24 w-24 rounded-xl object-cover" />
+                {/* 어떤 옷? (링크 모드일 때만) */}
+                {!garmentFile && (
+                  <div>
+                    <label className="text-xs font-medium text-stone-500">
+                      어떤 옷? <span className="font-normal text-stone-400">(여러 옷이 있을 때 / 선택)</span>
+                    </label>
+                    <input
+                      type="text" value={prompt} onChange={(e) => setPrompt(e.target.value)}
+                      placeholder='예: "파란색 치마", "체크 셔츠"'
+                      className="mt-1 w-full rounded-xl border border-stone-300 px-4 py-2.5 text-sm outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-200"
+                    />
+                  </div>
                 )}
               </div>
-              <ul className="mt-2 space-y-0.5 text-xs text-stone-400">
-                <li>· 얼굴이 <b>정면으로 크게</b> 나올수록 본인과 더 닮게 나와요</li>
-                <li>· 전신이 나오면 키·체형 보정이 더 자연스럽습니다</li>
-                <li>· 모자·선글래스·헤드폰·마스크는 <b>그대로 유지</b>됩니다</li>
-                <li>· 고해상도 사진일수록 결과 품질이 좋아집니다</li>
-              </ul>
             </div>
 
-            <button
-              type="submit" disabled={(!url && !garmentFile) || !photo || busy}
-              className="w-full rounded-xl bg-violet-600 py-3.5 font-bold text-white shadow-lg transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:bg-stone-300"
-            >
-              {busy ? "처리 중…" : "입어보기 생성 ✨"}
-            </button>
+            {/* 구분선 */}
+            <div className="border-t border-stone-100" />
+
+            {/* ── STEP 2 : 내 사진 ── */}
+            <div className="flex gap-4">
+              <div className="flex-shrink-0 flex h-8 w-8 items-center justify-center rounded-full bg-violet-100 font-bold text-violet-700 text-sm mt-0.5">2</div>
+              <div className="flex-1">
+                <p className="font-bold text-stone-800 mb-3">내 사진</p>
+                <div className="flex items-center gap-4">
+                  <label
+                    className={`flex-1 cursor-pointer rounded-xl border-2 border-dashed px-4 py-6 text-center text-sm transition
+                      ${isDragging ? "border-violet-500 bg-violet-50 text-violet-600" : "border-stone-300 text-stone-500 hover:border-violet-400 hover:bg-violet-50"}`}
+                    onDragOver={onDragOver} onDragEnter={onDragEnter}
+                    onDragLeave={onDragLeave} onDrop={onDrop}
+                  >
+                    {isDragging ? "여기에 놓아주세요" : photo ? `📷 ${photo.name}` : "클릭하거나 사진을 여기로 드래그"}
+                    <input type="file" accept="image/*" onChange={onPickPhoto} className="hidden" />
+                  </label>
+                  {photoPreview && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={photoPreview} alt="미리보기" className="h-24 w-24 rounded-xl object-cover" />
+                  )}
+                </div>
+                <ul className="mt-2 space-y-0.5 text-xs text-stone-400">
+                  <li>· 얼굴이 <b>정면으로 크게</b> 나올수록 본인과 더 닮게 나와요</li>
+                  <li>· 전신이 나오면 키·체형 보정이 더 자연스럽습니다</li>
+                  <li>· 모자·선글래스·헤드폰·마스크는 <b>그대로 유지</b>됩니다</li>
+                  <li>· 고해상도 사진일수록 결과 품질이 좋아집니다</li>
+                </ul>
+              </div>
+            </div>
+
+            {/* 구분선 */}
+            <div className="border-t border-stone-100" />
+
+            {/* ── STEP 3 : 생성 버튼 ── */}
+            <div className="flex gap-4">
+              <div className="flex-shrink-0 flex h-8 w-8 items-center justify-center rounded-full bg-violet-100 font-bold text-violet-700 text-sm mt-0.5">3</div>
+              <div className="flex-1">
+                <p className="font-bold text-stone-800 mb-3">AI 합성 시작</p>
+                <button
+                  type="submit" disabled={(!url && !garmentFile) || !photo || busy}
+                  className="w-full rounded-xl bg-violet-600 py-3.5 font-bold text-white shadow-lg transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:bg-stone-300"
+                >
+                  {busy ? "처리 중…" : "입어보기 생성 ✨"}
+                </button>
+              </div>
+            </div>
+
           </form>
 
           {busy && (
