@@ -52,12 +52,28 @@ export async function generateTryOn(
   return firstImageUrl(result);
 }
 
+const VIDEO_PROMPTS = [
+  // ① 런웨이 워킹
+  "The fashion model walks confidently toward the camera with a smooth catwalk stride. " +
+  "Arms swing naturally, outfit and hair move with the motion. " +
+  "White studio background, professional runway lighting, stable camera.",
+
+  // ② 포즈 시퀀스
+  "The fashion model transitions through three elegant poses: " +
+  "first standing with one hand on hip looking at camera, " +
+  "then turning slightly to show the outfit profile, " +
+  "finally glancing over shoulder with a natural smile. " +
+  "Smooth graceful transitions, white studio background, stable camera.",
+
+  // ③ 턴 + 포즈
+  "The fashion model does a slow elegant half-turn to show the back of the outfit, " +
+  "then turns back to face the camera and strikes a confident pose with hand on hip. " +
+  "White studio background, soft even lighting, stable camera.",
+];
+
 /** 영상 생성 작업을 Wan 2.5 큐에 제출하고 request_id를 반환. */
 export async function startTryOnVideo(imageUrl: string): Promise<string> {
-  const prompt =
-    "The person slowly turns around 360 degrees in place to show the full outfit from all sides. " +
-    "Smooth, natural full-body rotation in fashion lookbook style. " +
-    "Same white studio background, soft even lighting, stable camera, no cuts.";
+  const prompt = VIDEO_PROMPTS[Math.floor(Math.random() * VIDEO_PROMPTS.length)];
   const { request_id } = await fal.queue.submit(MODEL_VIDEO, {
     input: {
       prompt,
