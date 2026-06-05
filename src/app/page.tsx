@@ -422,25 +422,11 @@ export default function Home() {
                   {!garmentFile && (
                     <ul className="mt-1.5 space-y-0.5 text-xs text-stone-400">
                       <li>· 상품 <b>상세 페이지</b> 링크를 넣어주세요 (목록·검색 페이지 X)</li>
-                      <li>· 무신사·29CM·에이블리·지그재그 등 주요 쇼핑몰 지원</li>
-                      <li>· 로그인 필요 페이지·성인 인증 페이지는 가져올 수 없어요</li>
+                      <li>· 쇼핑몰에 따라 링크로 이미지를 못 가져올 수 있어요</li>
+                      <li>· 그럴 땐 아래 <b>이미지 직접 올리기</b>를 사용해주세요</li>
                     </ul>
                   )}
                 </div>
-
-                {/* 어떤 옷? (링크 모드일 때만) */}
-                {!garmentFile && (
-                  <div>
-                    <label className="text-xs font-medium text-stone-500">
-                      어떤 옷? <span className="font-normal text-stone-400">(여러 옷이 있을 때 / 선택)</span>
-                    </label>
-                    <input
-                      type="text" value={prompt} onChange={(e) => setPrompt(e.target.value)}
-                      placeholder='예: "파란색 치마", "체크 셔츠"'
-                      className="mt-1 w-full rounded-xl border border-stone-300 px-4 py-2.5 text-sm outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-200"
-                    />
-                  </div>
-                )}
 
                 {/* 구분선 */}
                 <div className="flex items-center gap-3">
