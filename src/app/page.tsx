@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 type Candidate = { url: string; alt: string; width: number; height: number };
-type Phase = "idle" | "scraping" | "matching" | "clarify" | "generating" | "result" | "error";
+type Phase = "idle" | "scraping" | "matching" | "clarify" | "manual-img" | "generating" | "result" | "error";
 
 type HistoryItem = {
   id: string;
@@ -34,6 +34,8 @@ export default function Home() {
   const [videoPhase, setVideoPhase] = useState<"idle" | "working" | "done" | "error">("idle");
   const [videoProgress, setVideoProgress] = useState(0);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
+
+  const [manualImgUrl, setManualImgUrl] = useState("");
 
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [showHistory, setShowHistory] = useState(false);
@@ -143,6 +145,7 @@ export default function Home() {
     setCandidates([]); setShortlist([]); setClarifyQuestion("");
     setResultUrl(null);
     setVideoPhase("idle"); setVideoUrl(null); setVideoProgress(0);
+    setManualImgUrl("");
     currentIdRef.current = null;
   }
 
@@ -181,6 +184,14 @@ export default function Home() {
       if (!scrapeRes.ok) throw new Error(scrapeData.error || "페이지를 열지 못했어요.");
       const cands: Candidate[] = scrapeData.candidates;
       setCandidates(cands);
+
+      // 이미지를 아예 못 가져온 경우 (무신사 같은 CSR SPA)
+      if (cands.length === 0) {
+        setClarifyQuestion("이 페이지에서 이미지를 가져오지 못했어요. 무신사·지그재그 같은 앱 기반 쇼핑몰은 이미지를 직접 붙여넣어야 해요.");
+        setShortlist([]);
+        setPhase("manual-img");
+        return;
+      }
 
       setPhase("matching");
       setMessage(`"${prompt || "옷"}"에 맞는 의상을 고르는 중…`);
@@ -412,18 +423,49 @@ export default function Home() {
             </div>
           )}
 
-          {phase === "clarify" && (
+          {(phase === "clarify" || phase === "manual-img") && (
             <div className="mt-6">
               <p className="font-semibold text-stone-800">🤔 {clarifyQuestion}</p>
-              <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
-                {shortlist.map((i) => (
-                  <button key={i} onClick={() => generateWith(candidates[i].url)}
-                    className="group overflow-hidden rounded-xl border border-stone-200 transition hover:border-violet-500 hover:shadow-md">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={candidates[i].url} alt={candidates[i].alt || `후보 ${i}`} className="aspect-square w-full object-cover" />
-                    <span className="block bg-white py-2 text-xs text-stone-500 group-hover:text-violet-600">이 옷으로 입어보기</span>
+
+              {/* 후보 이미지 그리드 */}
+              {shortlist.length > 0 && (
+                <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  {shortlist.map((i) => (
+                    <button key={i} onClick={() => generateWith(candidates[i].url)}
+                      className="group overflow-hidden rounded-xl border border-stone-200 transition hover:border-violet-500 hover:shadow-md">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={candidates[i].url} alt={candidates[i].alt || `후보 ${i}`} className="aspect-square w-full object-cover" />
+                      <span className="block bg-white py-2 text-xs text-stone-500 group-hover:text-violet-600">이 옷으로 입어보기</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* 직접 이미지 URL 입력 */}
+              <div className={`${shortlist.length > 0 ? "mt-5 border-t border-stone-100 pt-5" : "mt-4"}`}>
+                <p className="text-sm font-medium text-stone-600 mb-2">
+                  {shortlist.length > 0 ? "원하는 옷이 없다면 — 이미지 URL 직접 입력" : "의상 이미지 URL을 직접 붙여넣어 주세요"}
+                </p>
+                <p className="text-xs text-stone-400 mb-3">
+                  상품 이미지 위에서 <b>오른쪽 클릭 → 이미지 주소 복사</b> 후 붙여넣기
+                </p>
+                <div className="flex gap-2">
+                  <input
+                    type="url"
+                    value={manualImgUrl}
+                    onChange={(e) => setManualImgUrl(e.target.value)}
+                    placeholder="https://… 의상 이미지 URL"
+                    className="flex-1 rounded-xl border border-stone-300 px-4 py-2.5 text-sm outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-200"
+                    onKeyDown={(e) => e.key === "Enter" && manualImgUrl && generateWith(manualImgUrl)}
+                  />
+                  <button
+                    onClick={() => manualImgUrl && generateWith(manualImgUrl)}
+                    disabled={!manualImgUrl}
+                    className="rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-violet-700 disabled:bg-stone-300"
+                  >
+                    생성
                   </button>
-                ))}
+                </div>
               </div>
             </div>
           )}
