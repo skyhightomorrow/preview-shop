@@ -41,6 +41,7 @@ export default function Home() {
   const [isDraggingGarment, setIsDraggingGarment] = useState(false);
 
   const [lightbox, setLightbox] = useState<string | null>(null);
+  const [shareModal, setShareModal] = useState<{ url: string; type: "image" | "video" } | null>(null);
 
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [showHistory, setShowHistory] = useState(false);
@@ -107,18 +108,43 @@ export default function Home() {
     }
   }
 
-  async function shareUrl(fileUrl: string) {
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: "AI 가상 피팅", text: "AI로 가상으로 옷을 입어봤어요!", url: fileUrl });
-        return;
-      } catch { /* fallback */ }
-    }
+  const APP_URL = "https://preview-shop.vercel.app";
+  const SHARE_MESSAGE = `AI로 옷을 가상으로 입어봤어요! 👗✨\n나도 해보기 → ${APP_URL}`;
+
+  async function shareToX(imageUrl: string) {
+    const text = `AI로 옷을 가상으로 입어봤어요! 👗✨\n나도 해보기 →`;
+    const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(APP_URL)}`;
+    window.open(tweetUrl, "_blank");
+  }
+
+  /** 모바일: Web Share API로 이미지 파일을 네이티브 공유 시트에 (인스타·카카오 등 선택 가능) */
+  async function shareNative(imageUrl: string, type: "image" | "video") {
     try {
-      await navigator.clipboard.writeText(fileUrl);
-      showToast("링크가 복사됐어요!");
+      const res = await fetch(imageUrl);
+      const blob = await res.blob();
+      const ext = type === "video" ? "mp4" : "jpg";
+      const mimeType = type === "video" ? "video/mp4" : "image/jpeg";
+      const file = new File([blob], `tryon.${ext}`, { type: mimeType });
+
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title: "AI 가상 피팅", text: SHARE_MESSAGE });
+        return true;
+      }
+      // 파일 공유 불가면 텍스트+URL 공유
+      if (navigator.share) {
+        await navigator.share({ title: "AI 가상 피팅", text: SHARE_MESSAGE });
+        return true;
+      }
+    } catch { /* 취소나 오류 */ }
+    return false;
+  }
+
+  async function copyLink() {
+    try {
+      await navigator.clipboard.writeText(`${SHARE_MESSAGE}`);
+      showToast("메시지와 링크가 복사됐어요!");
     } catch {
-      showToast("공유 링크: " + fileUrl);
+      showToast("복사 실패 — 직접 선택해서 복사해주세요");
     }
   }
 
@@ -303,7 +329,7 @@ export default function Home() {
     return (
       <div className="mt-3 flex gap-2">
         <button
-          onClick={() => shareUrl(fileUrl)}
+          onClick={() => setShareModal({ url: fileUrl, type })}
           className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-stone-200 py-2.5 text-sm font-medium text-stone-600 hover:bg-stone-50 transition"
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -326,6 +352,76 @@ export default function Home() {
 
   return (
     <div className="min-h-screen">
+      {/* ===== 공유 모달 ===== */}
+      {shareModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+          onClick={() => setShareModal(null)}
+        >
+          <div
+            className="w-full max-w-sm rounded-3xl bg-white shadow-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* 헤더 */}
+            <div className="flex items-center justify-between px-6 pt-6 pb-4">
+              <h3 className="text-lg font-bold text-stone-900">공유하기</h3>
+              <button onClick={() => setShareModal(null)} className="text-stone-400 hover:text-stone-700 text-2xl leading-none">×</button>
+            </div>
+
+            {/* 미리보기 메시지 */}
+            <div className="mx-6 mb-4 rounded-2xl bg-stone-50 p-4">
+              <p className="text-sm text-stone-600 whitespace-pre-line leading-relaxed">
+                {`AI로 옷을 가상으로 입어봤어요! 👗✨\n나도 해보기 → ${APP_URL}`}
+              </p>
+            </div>
+
+            {/* 공유 버튼들 */}
+            <div className="px-6 pb-6 space-y-2.5">
+
+              {/* X (트위터) - 항상 가능 */}
+              <button
+                onClick={() => { shareToX(shareModal.url); setShareModal(null); }}
+                className="flex w-full items-center gap-3 rounded-2xl bg-black px-5 py-3.5 font-semibold text-white transition hover:bg-stone-800"
+              >
+                <svg className="h-5 w-5 fill-white flex-shrink-0" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.74l7.73-8.835L1.254 2.25H8.08l4.253 5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                X(트위터)에 공유
+              </button>
+
+              {/* 인스타그램 / 네이티브 공유 (모바일에서 인스타 선택 가능) */}
+              <button
+                onClick={async () => {
+                  const ok = await shareNative(shareModal.url, shareModal.type);
+                  if (ok) setShareModal(null);
+                  else {
+                    // 모바일 아니거나 실패 → 이미지 다운받고 안내
+                    await downloadFile(shareModal.url, `tryon.${shareModal.type === "video" ? "mp4" : "jpg"}`);
+                    showToast("이미지를 저장했어요! 인스타그램 앱에서 직접 올려주세요.");
+                    setShareModal(null);
+                  }
+                }}
+                className="flex w-full items-center gap-3 rounded-2xl px-5 py-3.5 font-semibold text-white transition"
+                style={{ background: "linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)" }}
+              >
+                <svg className="h-5 w-5 fill-white flex-shrink-0" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+                인스타그램에 공유
+                <span className="ml-auto text-xs font-normal opacity-70">모바일 권장</span>
+              </button>
+
+              {/* 링크 + 메시지 복사 */}
+              <button
+                onClick={() => { copyLink(); setShareModal(null); }}
+                className="flex w-full items-center gap-3 rounded-2xl border-2 border-stone-200 px-5 py-3.5 font-semibold text-stone-700 transition hover:bg-stone-50"
+              >
+                <svg className="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+                메시지 + 링크 복사
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 라이트박스 */}
       {lightbox && (
         <div
@@ -727,7 +823,7 @@ export default function Home() {
                       </p>
                       <div className="flex gap-1.5">
                         <button
-                          onClick={() => shareUrl(item.resultUrl)}
+                          onClick={() => setShareModal({ url: item.resultUrl, type: "image" })}
                           className="flex-1 rounded-lg border border-stone-200 py-1.5 text-xs text-stone-500 hover:bg-stone-50 transition"
                         >공유</button>
                         <button
