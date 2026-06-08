@@ -47,6 +47,13 @@ export default function Home() {
   const [showHistory, setShowHistory] = useState(false);
   const [toast, setToast] = useState("");
 
+  // 히스토리 항목에서 영상 생성
+  const [historyVideoState, setHistoryVideoState] = useState<{
+    id: string;
+    phase: "working" | "done" | "error";
+    progress: number;
+  } | null>(null);
+
   const toolRef = useRef<HTMLDivElement>(null);
   const currentIdRef = useRef<string | null>(null);
 
@@ -288,6 +295,43 @@ export default function Home() {
     }
   }
 
+  async function makeVideoForHistoryItem(item: HistoryItem) {
+    setHistoryVideoState({ id: item.id, phase: "working", progress: 0.05 });
+    try {
+      const startRes = await fetch("/api/video/start", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageUrl: item.resultUrl }),
+      });
+      const startData = await startRes.json();
+      if (!startRes.ok) throw new Error(startData.error || "영상 시작 실패");
+      const reqId: string = startData.requestId;
+
+      for (let i = 0; i < 90; i++) {
+        await new Promise((r) => setTimeout(r, 4000));
+        const st = await fetch(`/api/video/status?id=${encodeURIComponent(reqId)}`);
+        const data = await st.json();
+        if (data.state === "completed") {
+          setHistoryVideoState({ id: item.id, phase: "done", progress: 1 });
+          setHistory((prev) => {
+            const updated = prev.map((h) =>
+              h.id === item.id ? { ...h, videoUrl: data.videoUrl } : h
+            );
+            try { localStorage.setItem(HISTORY_KEY, JSON.stringify(updated)); } catch { /* ignore */ }
+            return updated;
+          });
+          return;
+        }
+        if (data.state === "failed") throw new Error(data.error || "영상 생성 실패");
+        setHistoryVideoState((prev) =>
+          prev ? { ...prev, progress: Math.min(0.95, Math.max(prev.progress, data.progress ?? prev.progress)) } : null
+        );
+      }
+      throw new Error("영상 생성이 너무 오래 걸려요. 다시 시도해주세요.");
+    } catch {
+      setHistoryVideoState((prev) => prev ? { ...prev, phase: "error" } : null);
+    }
+  }
+
   async function makeVideo() {
     if (!resultUrl) return;
     setVideoPhase("working");
@@ -355,7 +399,7 @@ export default function Home() {
       {/* ===== 공유 모달 ===== */}
       {shareModal && (
         <div
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+          className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4"
           onClick={() => setShareModal(null)}
         >
           <div
@@ -821,22 +865,53 @@ export default function Home() {
                       <p className="text-xs text-stone-400 mb-2">
                         {new Date(item.timestamp).toLocaleDateString("ko-KR", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
                       </p>
-                      <div className="flex gap-1.5">
+                      {/* 공유 / 저장 */}
+                      <div className="flex gap-1.5 mb-1.5">
                         <button
-                          onClick={() => setShareModal({ url: item.resultUrl, type: "image" })}
+                          onClick={() => { setShowHistory(false); setShareModal({ url: item.resultUrl, type: "image" }); }}
                           className="flex-1 rounded-lg border border-stone-200 py-1.5 text-xs text-stone-500 hover:bg-stone-50 transition"
                         >공유</button>
                         <button
                           onClick={() => downloadFile(item.resultUrl, `tryon-${item.id}.png`)}
                           className="flex-1 rounded-lg border border-stone-200 py-1.5 text-xs text-stone-500 hover:bg-stone-50 transition"
                         >저장</button>
-                        {item.videoUrl && (
+                      </div>
+                      {/* 영상 영역 */}
+                      {!item.videoUrl && historyVideoState?.id !== item.id && (
+                        <button
+                          onClick={() => makeVideoForHistoryItem(item)}
+                          className="w-full rounded-lg bg-fuchsia-50 border border-fuchsia-200 py-1.5 text-xs text-fuchsia-600 hover:bg-fuchsia-100 transition"
+                        >🎬 영상 만들기</button>
+                      )}
+                      {historyVideoState?.id === item.id && historyVideoState.phase === "working" && (
+                        <div>
+                          <div className="h-1.5 w-full overflow-hidden rounded-full bg-stone-100">
+                            <div className="h-full rounded-full bg-fuchsia-500 transition-all" style={{ width: `${Math.round(historyVideoState.progress * 100)}%` }} />
+                          </div>
+                          <p className="text-center text-xs text-fuchsia-500 mt-1">영상 생성 중… {Math.round(historyVideoState.progress * 100)}%</p>
+                        </div>
+                      )}
+                      {historyVideoState?.id === item.id && historyVideoState.phase === "error" && (
+                        <div className="flex gap-1.5">
+                          <span className="flex-1 rounded-lg bg-rose-50 border border-rose-200 py-1.5 text-center text-xs text-rose-500">오류 발생</span>
+                          <button
+                            onClick={() => makeVideoForHistoryItem(item)}
+                            className="flex-1 rounded-lg bg-fuchsia-50 border border-fuchsia-200 py-1.5 text-xs text-fuchsia-600 hover:bg-fuchsia-100 transition"
+                          >다시 시도</button>
+                        </div>
+                      )}
+                      {item.videoUrl && (
+                        <div className="flex gap-1.5">
                           <button
                             onClick={() => downloadFile(item.videoUrl!, `tryon-video-${item.id}.mp4`)}
                             className="flex-1 rounded-lg bg-fuchsia-50 border border-fuchsia-200 py-1.5 text-xs text-fuchsia-600 hover:bg-fuchsia-100 transition"
-                          >영상</button>
-                        )}
-                      </div>
+                          >📥 영상 저장</button>
+                          <button
+                            onClick={() => { setShowHistory(false); setShareModal({ url: item.videoUrl!, type: "video" }); }}
+                            className="flex-1 rounded-lg bg-fuchsia-50 border border-fuchsia-200 py-1.5 text-xs text-fuchsia-600 hover:bg-fuchsia-100 transition"
+                          >🔗 공유</button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
