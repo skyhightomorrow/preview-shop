@@ -31,6 +31,7 @@ export default function Home() {
   const [shortlist, setShortlist] = useState<number[]>([]);
 
   const [resultUrl, setResultUrl] = useState<string | null>(null);
+  const [resultSourceUrl, setResultSourceUrl] = useState<string | null>(null); // 링크로 생성한 경우 원본 쇼핑몰 URL
   const [videoPhase, setVideoPhase] = useState<"idle" | "working" | "done" | "error">("idle");
   const [videoProgress, setVideoProgress] = useState(0);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
@@ -196,7 +197,7 @@ export default function Home() {
   function reset() {
     setPhase("idle"); setError(""); setMessage("");
     setCandidates([]); setShortlist([]); setClarifyQuestion("");
-    setResultUrl(null);
+    setResultUrl(null); setResultSourceUrl(null);
     setVideoPhase("idle"); setVideoUrl(null); setVideoProgress(0);
     setManualImgUrl("");
     setGarmentFile(null); setGarmentPreview(null);
@@ -244,6 +245,7 @@ export default function Home() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if ((!url && !garmentFile) || !photo) return;
+    const submittedUrl = url; // reset() 전에 저장
     reset();
     try {
       // 의상 이미지가 직접 업로드된 경우 → 스크래핑 건너뜀
@@ -252,6 +254,7 @@ export default function Home() {
         return;
       }
 
+      setResultSourceUrl(submittedUrl); // 링크로 생성 → 결과창에 표시
       setPhase("scraping");
       setMessage("상품 페이지에서 옷을 찾는 중…");
       const scrapeRes = await fetch("/api/scrape", {
@@ -764,7 +767,22 @@ export default function Home() {
           {/* ===== 결과 ===== */}
           {phase === "result" && resultUrl && (
             <div className="mt-8">
-              <h3 className="text-lg font-bold text-stone-800">✨ 입어본 모습</h3>
+              <div className="flex items-center justify-between mb-1">
+                <h3 className="text-lg font-bold text-stone-800">✨ 입어본 모습</h3>
+                {resultSourceUrl && (
+                  <a
+                    href={resultSourceUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 rounded-full border border-stone-200 bg-stone-50 px-3 py-1 text-xs font-medium text-stone-500 hover:border-violet-400 hover:bg-violet-50 hover:text-violet-600 transition"
+                  >
+                    <svg className="h-3.5 w-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                    상품 보기
+                  </a>
+                )}
+              </div>
               <div
                 className="mt-3 overflow-hidden rounded-2xl border border-stone-200 cursor-zoom-in relative group"
                 onClick={() => setLightbox(resultUrl)}
