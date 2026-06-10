@@ -120,9 +120,12 @@ export default function Home() {
   const SHARE_MESSAGE = `AI로 옷을 가상으로 입어봤어요! 👗✨\n나도 해보기 → ${APP_URL}`;
 
   async function shareToX(imageUrl: string) {
+    // X Web Intent는 이미지 첨부 불가 → 이미지를 먼저 저장하고 안내
+    await downloadFile(imageUrl, "tryon.jpg");
     const text = `AI로 옷을 가상으로 입어봤어요! 👗✨\n나도 해보기 →`;
     const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(APP_URL)}`;
     window.open(tweetUrl, "_blank");
+    showToast("이미지 저장됨 — 트윗 창에서 📎 눌러 첨부해주세요");
   }
 
   /** 모바일: Web Share API로 이미지 파일을 네이티브 공유 시트에 (인스타·카카오 등 선택 가능) */
